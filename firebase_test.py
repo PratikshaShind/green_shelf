@@ -4,7 +4,7 @@ import requests
 st.title("🌿 Smart Green Shelf - Firebase Test")
 
 # Get Firebase URL
-DB_URL = st.secrets["FIREBASE_DB_URL"].rstrip("/")
+DB_URL = st.secrets["https://green-shelf-63225-default-rtdb.firebaseio.com/"].rstrip("/")
 
 # Read sensors from Firebase
 url = f"{DB_URL}/sensors.json"

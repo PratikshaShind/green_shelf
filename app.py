@@ -21,7 +21,7 @@ st.set_page_config(
 # -----------------------------
 # Firebase connection
 # -----------------------------
-DB_URL = st.secrets["FIREBASE_DB_URL"].rstrip("/")
+DB_URL = st.secrets["https://green-shelf-63225-default-rtdb.firebaseio.com/"].rstrip("/")
 
 
 def firebase_get(path):
