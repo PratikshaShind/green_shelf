@@ -1,4 +1,0 @@
-streamlit
-plotly
-firebase-admin
-pandas
