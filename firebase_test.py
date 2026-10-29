@@ -1,28 +1,36 @@
+
 import streamlit as st
-import requests
+import firebase_admin
+from firebase_admin import credentials, db
 
-st.title("🌿 Smart Green Shelf - Firebase Test")
+st.title("Green Shelf - Firebase Test")
 
-# Get Firebase URL
-DB_URL = st.secrets["FIREBASE_DB_URL"].rstrip("/")
+try:
+    DB_URL = st.secrets["firebase"]["database_url"]
 
-# Read sensors from Firebase
-url = f"{DB_URL}/sensors.json"
+    if not firebase_admin._apps:
+        service_account_info = dict(
+            st.secrets["firebase_service_account"]
+        )
 
-response = requests.get(url)
+        cred = credentials.Certificate(service_account_info)
 
-if response.status_code == 200:
+        firebase_admin.initialize_app(
+            cred,
+            {"databaseURL": DB_URL}
+        )
 
-    data = response.json()
+    sensor_ref = db.reference("sensors")
+    data = sensor_ref.get()
 
-    st.success("✅ Firebase Connected!")
+    st.success("Firebase connected successfully!")
 
-    st.write("Sensor data received from Firebase:")
+    if data is not None:
+        st.write("Sensor data received:")
+        st.json(data)
+    else:
+        st.warning("Connected, but no sensor data exists at /sensors.")
 
-    st.json(data)
-
-else:
-
-    st.error("❌ Firebase connection failed")
-
-    st.write(response.text)
+except Exception as e:
+    st.error("Firebase connection failed")
+    st.write(str(e))
