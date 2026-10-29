@@ -1,10 +1,14 @@
 
+
+import json
+from pathlib import Path
+import firebase_admin
+from firebase_admin import credentials, db
 import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
 import plotly.graph_objects as go
-import requests
 import time
 
 st.set_page_config(
@@ -19,22 +23,72 @@ st.set_page_config(
 
 
 # -----------------------------
-# Firebase connection
+# Firebase connection (Firebase Admin SDK)
 # -----------------------------
-DB_URL = st.secrets["FIREBASE_DB_URL"].rstrip("/")
+
+DB_URL = st.secrets["firebase"]["database_url"].rstrip("/")
+
+
+
+
+
+
+import streamlit as st
+import firebase_admin
+from firebase_admin import credentials, db
+
+
+def initialize_firebase():
+    from pathlib import Path
+    import firebase_admin
+    import streamlit as st
+    from firebase_admin import credentials
+
+    # Reuse an existing Firebase connection
+    if firebase_admin._apps:
+        return
+
+    # Firebase database URL
+    if "firebase" not in st.secrets:
+        st.error("Firebase database settings are missing.")
+        st.stop()
+
+    database_url = st.secrets["firebase"]["database_url"]
+
+    # Local development: use the new JSON file in the project folder
+    key_path = (
+        Path(__file__).resolve().parent
+        / "green-shelf-63225-firebase-adminsdk-fbsvc-51a5d3afab.json"
+    )
+
+    if key_path.is_file():
+        cred = credentials.Certificate(str(key_path))
+
+    else:
+        # Streamlit Community Cloud: use its configured secrets
+        if "firebase_service_account" not in st.secrets:
+            st.error(
+                "Firebase credentials are missing. "
+                "Configure firebase_service_account in Streamlit Cloud secrets."
+            )
+            st.stop()
+
+        service_account_info = dict(
+            st.secrets["firebase_service_account"]
+        )
+        cred = credentials.Certificate(service_account_info)
+
+    firebase_admin.initialize_app(
+        cred,
+        {"databaseURL": database_url}
+    )
+
+initialize_firebase()
 
 
 def firebase_get(path):
-    url = f"{DB_URL}/{path}.json"
-
-    response = requests.get(
-        url,
-        timeout=8
-    )
-
-    response.raise_for_status()
-
-    return response.json()
+    """Read a database path using authenticated Firebase Admin SDK access."""
+    return db.reference(path).get()
 
 
 # Get latest sensor data from Firebase
@@ -225,7 +279,15 @@ with st.sidebar:
 
 @st.fragment(run_every="5s")
 def live_dashboard():
-    temperature, humidity, mq135_raw, gas = get_live_sensor_data()
+    try:
+        temperature, humidity, mq135_raw, gas = get_live_sensor_data()
+    except Exception as e:
+        st.error(f"Unable to read current sensor data from Firebase: {e}")
+        st.info(
+            "Check that the Firebase service-account JSON is in your Downloads "
+            "folder and that the database URL in .streamlit/secrets.toml is correct."
+        )
+        return
 
     # -----------------------------
     # Calculations
