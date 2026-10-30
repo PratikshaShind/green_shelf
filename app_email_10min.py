@@ -4,10 +4,12 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import plotly.graph_objects as go
-import requests
+from pathlib import Path
 import time
 import smtplib
 from email.mime.text import MIMEText
+import firebase_admin
+from firebase_admin import credentials, db
 
 st.set_page_config(
     page_title="Smart Green Shelf Dashboard",
@@ -23,15 +25,38 @@ st.set_page_config(
 # -----------------------------
 # Firebase connection
 # -----------------------------
-DB_URL = st.secrets["FIREBASE_DB_URL"].rstrip("/")
+DB_URL = st.secrets.get(
+    "FIREBASE_DB_URL",
+    "https://green-shelf-63225-default-rtdb.firebaseio.com/",
+).rstrip("/")
+
+if not firebase_admin._apps:
+    key_path = Path(__file__).resolve().parent / "green-shelf-63225-firebase-adminsdk-fbsvc-51a5d3afab.json"
+    if key_path.is_file():
+        firebase_credential = credentials.Certificate(str(key_path))
+    elif "firebase_service_account" in st.secrets:
+        firebase_credential = credentials.Certificate(
+            dict(st.secrets["firebase_service_account"])
+        )
+    else:
+        st.error(
+            "Firebase credentials are missing. Add the service-account JSON "
+            "file locally or configure firebase_service_account in Streamlit secrets."
+        )
+        st.stop()
+
+    firebase_admin.initialize_app(
+        firebase_credential,
+        {"databaseURL": DB_URL},
+    )
 
 
 # -----------------------------
 # Email configuration
 # -----------------------------
-EMAIL_SENDER = st.secrets["EMAIL_SENDER"]
-EMAIL_PASSWORD = st.secrets["EMAIL_PASSWORD"]
-EMAIL_RECEIVER = st.secrets["EMAIL_RECEIVER"]
+EMAIL_SENDER = st.secrets.get("EMAIL_SENDER", "")
+EMAIL_PASSWORD = st.secrets.get("EMAIL_PASSWORD", "")
+EMAIL_RECEIVER = st.secrets.get("EMAIL_RECEIVER", "")
 EMAIL_INTERVAL_SECONDS = 600  # 10 minutes
 
 
@@ -126,6 +151,12 @@ validated/calibrated before being used for food-safety decisions.
 def maybe_send_email_report(item, temperature, humidity, mq135_raw, gas,
                             freshness, days_left, status, alerts, advice):
     """Send at most one report every 10 minutes for this Streamlit session."""
+    if not (EMAIL_SENDER and EMAIL_PASSWORD and EMAIL_RECEIVER):
+        st.session_state["email_status"] = (
+            "Email reports are disabled. Add email settings to .streamlit/secrets.toml to enable them."
+        )
+        return
+
     now = datetime.now()
     last_sent = st.session_state.get("last_email_sent")
 
@@ -145,16 +176,8 @@ def maybe_send_email_report(item, temperature, humidity, mq135_raw, gas,
 
 
 def firebase_get(path):
-    url = f"{DB_URL}/{path}.json"
-
-    response = requests.get(
-        url,
-        timeout=8
-    )
-
-    response.raise_for_status()
-
-    return response.json()
+    """Read a Firebase path using authenticated Admin SDK access."""
+    return db.reference(path).get()
 
 
 # Get latest sensor data from Firebase
