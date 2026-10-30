@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#174d2b" />
+    <title>Smart Green Shelf</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">IoT freshness monitor</p>
+          <h1>Smart Green Shelf</h1>
+          <p class="subtitle">Real-time environmental data from your connected shelf.</p>
+        </div>
+        <div id="connection-status" class="connection connecting">Connecting…</div>
+      </header>
+
+      <section class="metrics" aria-label="Current sensor readings">
+        <article class="metric-card">
+          <span class="metric-label">Temperature</span>
+          <strong id="temperature">—</strong>
+          <small>°C</small>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Humidity</span>
+          <strong id="humidity">—</strong>
+          <small>%</small>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Gas level</span>
+          <strong id="gas">—</strong>
+          <small>ppm / reading</small>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Last updated</span>
+          <strong id="updated">—</strong>
+          <small id="updated-detail">Waiting for data</small>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Live feed</p>
+              <h2>Latest sensor data</h2>
+            </div>
+            <span class="live-dot" aria-hidden="true"></span>
+          </div>
+          <div id="sensor-details" class="detail-list">
+            <p class="empty-state">Waiting for Firebase data…</p>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Firebase /history</p>
+              <h2>Recent history</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Temp.</th>
+                  <th>Humidity</th>
+                  <th>Gas</th>
+                </tr>
+              </thead>
+              <tbody id="history-body">
+                <tr><td colspan="4" class="empty-state">Waiting for history…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <footer>
+        <span>Firebase Realtime Database</span>
+        <span id="error-message" class="error-message" role="status"></span>
+      </footer>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

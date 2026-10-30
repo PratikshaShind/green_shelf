@@ -1,7 +1,10 @@
 
-.streamlit/secrets.toml
 *firebase-adminsdk*.json
 *service-account*.json
+.streamlit/secrets.toml
 __pycache__/
 .venv/
 venv/
+.env
+.env.*
+!.env.example
